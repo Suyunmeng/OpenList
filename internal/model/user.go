@@ -199,5 +199,5 @@ func (u *User) WebAuthnCredentials() []webauthn.Credential {
 }
 
 func (u *User) WebAuthnIcon() string {
-	return "https://fastly.jsdelivr.net/gh/OpenListTeam/Logo@master/OpenList.svg"
+	return "https://cdn.oplist.org/gh/OpenListTeam/Logo@main/OpenList.svg"
 }
