@@ -47,18 +47,19 @@ func CreateStorage(ctx context.Context, storage model.Storage) (uint, error) {
 	storage.Modified = time.Now()
 	storage.MountPath = utils.FixAndCleanPath(storage.MountPath)
 	var err error
-	// check driver first
-	driverName := storage.Driver
-	driverNew, err := GetDriver(driverName)
-	if err != nil {
-		return 0, errors.WithMessage(err, "failed get driver new")
-	}
-	storageDriver := driverNew()
-	// insert storage to database
+	
+	// insert storage to database first to get an ID
 	err = db.CreateStorage(&storage)
 	if err != nil {
 		return storage.ID, errors.WithMessage(err, "failed create storage in database")
 	}
+	
+	// create driver using the new method that supports both local and remote drivers
+	storageDriver, err := CreateDriverFromStorage(&storage)
+	if err != nil {
+		return storage.ID, errors.WithMessage(err, "failed get driver new")
+	}
+	
 	// already has an id
 	err = initStorage(ctx, storage, storageDriver)
 	go callStorageHooks("add", storageDriver)
@@ -72,13 +73,12 @@ func CreateStorage(ctx context.Context, storage model.Storage) (uint, error) {
 // LoadStorage load exist storage in db to memory
 func LoadStorage(ctx context.Context, storage model.Storage) error {
 	storage.MountPath = utils.FixAndCleanPath(storage.MountPath)
-	// check driver first
-	driverName := storage.Driver
-	driverNew, err := GetDriver(driverName)
+	
+	// create driver using the new method that supports both local and remote drivers
+	storageDriver, err := CreateDriverFromStorage(&storage)
 	if err != nil {
 		return errors.WithMessage(err, "failed get driver new")
 	}
-	storageDriver := driverNew()
 
 	err = initStorage(ctx, storage, storageDriver)
 	go callStorageHooks("add", storageDriver)
